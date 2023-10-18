@@ -215,7 +215,7 @@ def main(_argv):
     top_boundary = 100
     bottom_boundary = 400
 
-    left_objects = []  # List of objects within the marking area
+    left_objects = {} # Dictionary of objects within the marking area
 
     physical_devices = tf.config.experimental.list_physical_devices('GPU')
     if len(physical_devices) > 0:
@@ -293,29 +293,55 @@ def main(_argv):
         cmap = plt.get_cmap('tab20b')
         colors = [cmap(i)[:3] for i in np.linspace(0, 1, 20)]
 
-        for det in detections:
-            bbox = det.to_tlbr()
-            class_name = det.class_name
+        # Call the tracker
+        tracker.predict()
+        tracker.update(detections)
+
+        for track in tracker.tracks:
+            if not track.is_confirmed() or track.time_since_update > 1:
+                continue 
+            bbox = track.to_tlbr()
+            class_name = track.get_class()
 
             # Check if the box is within the marking area
             if left_boundary < bbox[0] < right_boundary and top_boundary < bbox[1] < bottom_boundary:
-                if class_name == "chair":
-                    # Object is within the marking area and is a backpack
-                    left_objects.append({'bbox': bbox, 'timestamp': time.time()})
-                if class_name == "backpack":
-                    # Object is within the marking area and is a backpack
-                    left_objects.append({'bbox': bbox, 'timestamp': time.time()})
+                if track.track_id not in left_objects:
+                    if class_name == "chair":
+                        # Object is within the marking area and is a backpack
+                        left_objects[track.track_id] = {'bbox': bbox, 'timestamp': time.time(), 'lastSeen': time.time()}
+                        # left_objects.append({'bbox': bbox, 'timestamp': time.time()})
+                    if class_name == "backpack":
+                        # Object is within the marking area and is a backpack
+                        left_objects[track.track_id] = {'bbox': bbox, 'timestamp': time.time(), 'lastSeen': time.time()}
+                        # left_objects.append({'bbox': bbox, 'timestamp': time.time()})
+                else:
+                    # Get object from the dictionary
+                    obj = left_objects[track.track_id]
+                    # Calculate centroid of the current object
+                    currCentroid = ((bbox[0] + bbox[2]) / 2,(bbox[1] + bbox[3]) / 2)
+                    # Calculate centroid of the last seen object
+                    objCentroid = ((obj['bbox'][0] + obj['bbox'][2]) / 2,(obj['bbox'][1] + obj['bbox'][3]) / 2)
+                    # Calculate distance between current and last seen
+                    distance = abs(currCentroid[0]-objCentroid[0]) + abs(currCentroid[1]-objCentroid[1])
+                    # If the distance more than 100px, update position and timestamp
+                    if distance > 100:
+                        left_objects[track.track_id] = {'bbox': bbox, 'timestamp': time.time()}
+                    # Update the object last seen
+                    left_objects[track.track_id]['lastSeen'] = time.time()
 
         # Check for backpacks that have stopped moving
         current_time = time.time()
-        for obj in left_objects:
-            if current_time - obj['timestamp'] > 5:
+        for key in left_objects.keys():
+            if current_time - left_objects[key]['timestamp'] > 5:
                 # Action for left-behind backpack
                 # For example, you can mark or send a notification
-                cv2.putText(img, "Barang Ditinggalkan", (int(obj['bbox'][0]), int(obj['bbox'][1] - 10)), 0, 0.75, (255, 0, 0), 2)
+                cv2.putText(img, "Barang Ditinggalkan", (int(left_objects[key]['bbox'][0]), int(left_objects[key]['bbox'][1] - 10)), 0, 0.75, (255, 0, 0), 2)
 
                 # Draw a bounding box around the left-behind object
-                cv2.rectangle(img, (int(obj['bbox'][0]), int(obj['bbox'][1])), (int(obj['bbox'][2]), int(obj['bbox'][3])), (0, 0, 255), 2)
+                cv2.rectangle(img, (int(left_objects[key]['bbox'][0]), int(left_objects[key]['bbox'][1])), (int(left_objects[key]['bbox'][2]), int(left_objects[key]['bbox'][3])), (0, 0, 255), 2)
+
+            # if current_time - left_objects[key]['lastSeen'] > 5:
+            #     left_objects.pop(key, None)
 
         cv2.putText(img, "FPS: {:.2f}".format(fps), (0, 30), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 0, 255), 2)
         cv2.imshow('output', img)
