@@ -115,24 +115,52 @@ def main(_argv):
         detections = [detections[i] for i in indices]        
 
         # Call the tracker
+        # tracker.predict()
+        # tracker.update(detections)
+
+        # for track in tracker.tracks:
+        #     if not track.is_confirmed() or track.time_since_update > 1:
+        #         continue 
+        #     bbox = track.to_tlbr()
+        #     class_name = track.get_class()
+        #     color = colors[int(track.track_id) % len(colors)]
+        #     color = [i * 255 for i in color]
+        #     cv2.rectangle(img, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])), color, 2)
+        #     cv2.rectangle(img, (int(bbox[0]), int(bbox[1]-30)), (int(bbox[0])+(len(class_name)+len(str(track.track_id)))*17, int(bbox[1])), color, -1)
+        #     cv2.putText(img, class_name + "-" + str(track.track_id),(int(bbox[0]), int(bbox[1]-10)),0, 0.75, (255,255,255),2)
+            
+        # Call the tracker
         tracker.predict()
         tracker.update(detections)
 
+        # Inisialisasi jumlah mobil yang terdeteksi
+        count_mobil = 0
+
         for track in tracker.tracks:
             if not track.is_confirmed() or track.time_since_update > 1:
-                continue 
-            bbox = track.to_tlbr()
+                continue
+            bbox = track.to_tlbr() 
             class_name = track.get_class()
-            color = colors[int(track.track_id) % len(colors)]
-            color = [i * 255 for i in color]
-            cv2.rectangle(img, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])), color, 2)
-            cv2.rectangle(img, (int(bbox[0]), int(bbox[1]-30)), (int(bbox[0])+(len(class_name)+len(str(track.track_id)))*17, int(bbox[1])), color, -1)
-            cv2.putText(img, class_name + "-" + str(track.track_id),(int(bbox[0]), int(bbox[1]-10)),0, 0.75, (255,255,255),2)
-            
+            # Jika class_name adalah "car", tambahkan ke jumlah mobil
+            if class_name == "car":
+                count_mobil += 1
+                color = colors[int(track.track_id) % len(colors)]
+                color = [i * 255 for i in color]
+                cv2.rectangle(img, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])), color, 2)
+                cv2.rectangle(img, (int(bbox[0]), int(bbox[1]-30)), (int(bbox[0])+(len(class_name)+len(str(track.track_id)))*17, int(bbox[1])), color, -1)
+                cv2.putText(img, class_name + "-" + str(track.track_id),(int(bbox[0]), int(bbox[1]-10)),0, 0.75, (255,255,255),2)
+                if count_mobil > 8:
+                    cv2.putText(img, "Macet!", (0, 90),
+                                cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 0, 255), 2)
+
+        # Munculkan jumlah mobil yang terdeteksi di layar
+        cv2.putText(img, "Jumlah Mobil: {}".format(count_mobil), (0, 60),cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 0, 255), 2)
+
+
         ### UNCOMMENT BELOW IF YOU WANT CONSTANTLY CHANGING YOLO DETECTIONS TO BE SHOWN ON SCREEN
-        for det in detections:
-           bbox = det.to_tlbr() 
-           cv2.rectangle(img,(int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),(255,0,0), 2)
+        # for det in detections:
+        #    bbox = det.to_tlbr() 
+        #    cv2.rectangle(img,(int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),(255,0,0), 2)
         
         # print fps on screen 
         fps  = ( fps + (1./(time.time()-t1)) ) / 2
