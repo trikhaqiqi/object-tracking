@@ -52,4 +52,6 @@ CMD ["python", "object_tracker.py", "--video", "./data/video/test.mp4", "--outpu
 # RUN git clone https://github.com/pjreddie/darknet
 # WORKDIR darknet/
 # RUN wget https://pjreddie.com/media/files/yolov3.weights -P weights/
-# WORKDIR /home
+# WORKDIR /home/abandoned-yolo
+
+CMD ["python", "object_tracker.py", "--video", "./data/video/test.mp4", "--output", "./data/video/results.avi"]
