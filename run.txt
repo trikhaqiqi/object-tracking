@@ -1,1 +1,32 @@
 docker-compose up --build
+
+# Gunakan gambar TensorFlow yang sesuai sebagai dasar
+FROM tensorflow/tensorflow:2.5.0
+
+# Instalasi dependensi tambahan yang mungkin diperlukan
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    ffmpeg \
+    libsm6 \
+    libxext6 \
+    libxrender-dev
+
+# Salin semua berkas proyek Anda ke dalam kontainer Docker
+COPY . /app
+
+# Setel direktori kerja Docker
+WORKDIR /app
+
+# Instal Python
+RUN apt-get update && apt-get install -y python3 python3-pip
+
+# Instalasi dependensi Python
+RUN pip install -r requirements.txt
+
+# Download dan konversi berat pre-trained (contoh menggunakan berat resmi YOLOv3)
+RUN wget https://pjreddie.com/media/files/yolov3.weights -O weights/yolov3.weights
+RUN python load_weights.py --weights ./weights/yolov3.weights --output ./weights/yolov3.tf
+
+# Menjalankan pemantau objek pada video
+CMD ["python", "object_tracker.py", "--video", "./data/video/test.mp4", "--output", "./data/video/results.avi"]

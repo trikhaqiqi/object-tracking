@@ -1,32 +1,29 @@
-FROM python:3
+FROM tensorflow/tensorflow:2.5.0
+
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    ffmpeg \
+    libsm6 \
+    libxext6 \
+    libxrender-dev
+
 RUN \
- apt-get install -y \
- wget \
- unzip \
- git
+	apt-get install -y \
+	wget \
+	unzip \
+	ffmpeg \ 
+	git
 
-RUN apt-get -y update
-RUN apt-get -y upgrade
-RUN apt-get install -y ffmpeg
-RUN pip3 install --upgrade pip
-RUN pip3 install numpy
-# RUN pip3 install tensorflow
-RUN pip3 install lxml
-RUN pip3 install tqdm
-RUN pip3 install seaborn
-RUN pip3 install pillow
-RUN pip3 install opencv-python
-RUN pip3 install requests
-# RUN pip3 install numba
-RUN pip3 install imutils
+COPY . /home/abandoned-yolo
 
-WORKDIR home/abandoned-yolo/
-COPY object_tracker.py /home/abandoned-yolo
-# COPY test_img.jpg /home/
-# RUN git clone https://github.com/pjreddie/darknet
-
-WORKDIR abandoned-yolo/
-RUN wget https://pjreddie.com/media/files/yolov3.weights -P weights/
 WORKDIR /home/abandoned-yolo
+
+RUN apt-get update && apt-get install -y python3 python3-pip
+
+RUN pip install -r requirements.txt
+
+# RUN wget https://pjreddie.com/media/files/yolov3.weights -P weights/
+RUN python load_weights.py --weights ./weights/yolov3.weights --output ./weights/yolov3.tf
 
 CMD ["python", "object_tracker.py", "--video", "./data/video/macet1.mp4", "--output", "./data/video/macet1.avi"]
