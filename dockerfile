@@ -17,12 +17,12 @@ RUN pip3 install -r requirements.txt
 
 WORKDIR home/
 
-RUN git clone https://github.com/pjreddie/darknet
-WORKDIR darknet/
+# RUN git clone https://github.com/pjreddie/darknet
+# WORKDIR darknet/
 
-RUN sed -i 's/GPU=.*/GPU=1/' Makefile 
-RUN sed -i 's/CUDNN=.*/CUDNN=1/' Makefile && \
-	make
+# RUN sed -i 's/GPU=.*/GPU=1/' Makefile 
+# RUN sed -i 's/CUDNN=.*/CUDNN=1/' Makefile && \
+# 	make
 
 RUN wget https://pjreddie.com/media/files/yolov3.weights -P weights/
 
