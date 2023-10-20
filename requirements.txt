@@ -1,6 +1,6 @@
-tensorflow==2.5.0
+tensorflow==2.8.0rc0
 numpy
-opencv-python==4.1.1.26
+opencv-python==4.3.0.38
 lxml
 tqdm
 seaborn
